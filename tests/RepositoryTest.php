@@ -2,7 +2,7 @@
 
 namespace Test\AlphaSoft\AsLinkOrm;
 
-use AlphaSoft\AsLinkOrm\DoctrineManager;
+use AlphaSoft\AsLinkOrm\EntityManager;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Test\AlphaSoft\AsLinkOrm\Model\Post;
@@ -12,18 +12,16 @@ use Test\AlphaSoft\AsLinkOrm\Repository\UserRepository;
 
 class RepositoryTest extends TestCase
 {
-    private $connection;
-    private $userRepository;
-    private $postRepository;
+    private \Doctrine\DBAL\Connection $connection;
+    private EntityManager $manager;
+    private \AlphaSoft\AsLinkOrm\Repository\Repository $userRepository;
+    private \AlphaSoft\AsLinkOrm\Repository\Repository $postRepository;
 
     protected function setUp(): void
     {
-        $manager = new DoctrineManager([
+        $manager = new EntityManager([
             'url' => 'sqlite:///:memory:',
-            'driverOptions' => array(
-                PDO::ATTR_EMULATE_PREPARES => FALSE,
-                PDO::FETCH_NUM => true,
-            )
+            'driverOptions' => [PDO::ATTR_EMULATE_PREPARES => FALSE, PDO::FETCH_NUM => true]
         ]);
 
         $this->connection = $manager->getConnection();
@@ -31,6 +29,7 @@ class RepositoryTest extends TestCase
         $this->setUpDatabaseSchema();
 
 
+        $this->manager = $manager;
         $this->userRepository = $manager->getRepository(UserRepository::class);
         $this->postRepository = $manager->getRepository(PostRepository::class);
     }
@@ -55,7 +54,7 @@ class RepositoryTest extends TestCase
             );');
     }
 
-    public function testFindOneByReturnsModel()
+    public function testFindOneByReturnsModel(): void
     {
         $this->insertTestData();
 
@@ -66,7 +65,7 @@ class RepositoryTest extends TestCase
         $this->assertEquals(true, (bool)$result->get('isActive'));
     }
 
-    public function testFindByReturnsArrayOfModels()
+    public function testFindByReturnsArrayOfModels(): void
     {
         $this->insertTestData();
 
@@ -78,7 +77,7 @@ class RepositoryTest extends TestCase
         }
     }
 
-    public function testFindOneByReturnsNullWhenNotFound()
+    public function testFindOneByReturnsNullWhenNotFound(): void
     {
         $this->insertTestData();
 
@@ -87,7 +86,7 @@ class RepositoryTest extends TestCase
         $this->assertNull($result);
     }
 
-    public function testUpdateUpdatesModel()
+    public function testUpdateUpdatesModel(): void
     {
         $this->insertTestData();
 
@@ -99,7 +98,7 @@ class RepositoryTest extends TestCase
         $this->assertEquals('UpdatedName', $updatedUser->get('firstname'));
     }
 
-    public function testHasOne()
+    public function testHasOne(): void
     {
         $this->insertTestData();
 
@@ -111,7 +110,7 @@ class RepositoryTest extends TestCase
         $this->assertSame(1, $relatedUser->getPrimaryKeyValue());
     }
 
-    public function testToDbMethod()
+    public function testToDbMethod(): void
     {
         $user = new User();
         $user
@@ -141,7 +140,7 @@ class RepositoryTest extends TestCase
 
     }
 
-    public function testToDbForUpdatedMethod()
+    public function testToDbForUpdatedMethod(): void
     {
         $user = new User();
         $user
@@ -154,7 +153,7 @@ class RepositoryTest extends TestCase
         ], $user->toDbForUpdate());
 
     }
-    public function testHasMany()
+    public function testHasMany(): void
     {
         $this->insertTestData();
 
@@ -169,7 +168,7 @@ class RepositoryTest extends TestCase
         $this->assertEquals('First Post', $relatedPosts[0]->get('title'));
     }
 
-    public function testMultipleFind()
+    public function testMultipleFind(): void
     {
         $this->insertTestData();
 
@@ -180,7 +179,7 @@ class RepositoryTest extends TestCase
         $this->assertCount(2, iterator_to_array($users, false));
     }
 
-    public function testToDbWithDefaultColumnMapping()
+    public function testToDbWithDefaultColumnMapping(): void
     {
         $user = new User([
             'id' => 1,
@@ -205,7 +204,7 @@ class RepositoryTest extends TestCase
         $this->assertEquals($expectedDbData, $result);
     }
 
-    public function testGetPosts()
+    public function testGetPosts(): void
     {
         $this->insertTestData();
 
@@ -239,7 +238,7 @@ class RepositoryTest extends TestCase
         $this->assertCount(1, $user->getPosts());
     }
 
-    public function testOrderBy()
+    public function testOrderBy(): void
     {
         $this->insertTestData();
 
@@ -247,7 +246,7 @@ class RepositoryTest extends TestCase
         $this->assertCount(2, $users);
     }
 
-    public function testModelCache()
+    public function testModelCache(): void
     {
         $this->insertTestData();
 
@@ -335,5 +334,13 @@ class RepositoryTest extends TestCase
         $this->assertEquals(1, $this->postRepository->insert($post_1));
         $this->assertEquals(1, $this->postRepository->insert($post_2));
 
+    }
+
+    public function testGetRepositoriesByEntityName(): void
+    {
+        $this->insertTestData();
+
+        $userRepository =  $this->manager->getRepository(User::class);
+        $this->assertInstanceOf(UserRepository::class, $userRepository);
     }
 }

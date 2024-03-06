@@ -2,16 +2,10 @@
 
 namespace AlphaSoft\AsLinkOrm;
 
-final class ConstructPdoDsn
+final readonly class ConstructPdoDsn
 {
-    /**
-     * @var string
-     */
-    private $service;
-
-    public function __construct(string $service)
+    public function __construct(private string $service)
     {
-        $this->service = $service;
     }
 
     public function __invoke(array $params): string

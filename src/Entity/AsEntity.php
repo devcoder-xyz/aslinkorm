@@ -2,24 +2,21 @@
 
 namespace AlphaSoft\AsLinkOrm\Entity;
 
-use AlphaSoft\DataModel\Model;
 use AlphaSoft\AsLinkOrm\Cache\ColumnCache;
 use AlphaSoft\AsLinkOrm\Cache\PrimaryKeyColumnCache;
-use AlphaSoft\AsLinkOrm\DoctrineManager;
-use AlphaSoft\AsLinkOrm\Mapping\Column;
-use AlphaSoft\AsLinkOrm\Mapping\PrimaryKeyColumn;
+use AlphaSoft\AsLinkOrm\EntityManager;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\Column;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\Entity;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\PrimaryKeyColumn;
+use AlphaSoft\DataModel\Model;
 use LogicException;
 use SplObjectStorage;
 
 abstract class AsEntity extends Model
 {
-    /**
-     * @var null|DoctrineManager
-     */
-    private $__manager = null;
+    private ?\AlphaSoft\AsLinkOrm\EntityManager $__manager = null;
 
-    private $_modifiedAttributes = [];
-
+    private array $_modifiedAttributes = [];
 
     final public function set(string $property, $value): Model
     {
@@ -36,7 +33,7 @@ abstract class AsEntity extends Model
             if (!array_key_exists($property, $this->attributes)) {
                 continue;
             }
-            $dbData[sprintf('`%s`',$column->getName())] = $this->attributes[$property];
+            $dbData[sprintf('`%s`', $column->getName())] = $this->attributes[$property];
         }
         return $dbData;
     }
@@ -49,41 +46,41 @@ abstract class AsEntity extends Model
             if (!array_key_exists($property, $this->_modifiedAttributes)) {
                 continue;
             }
-            $dbData[sprintf('`%s`',$column->getName())] = $this->_modifiedAttributes[$property];
+            $dbData[sprintf('`%s`', $column->getName())] = $this->_modifiedAttributes[$property];
         }
         return $dbData;
     }
 
-    public function setDoctrineManager(DoctrineManager $manager): void
+    public function setEntityManager(?EntityManager $manager): void
     {
         $this->__manager = $manager;
     }
 
-    protected function hasOne(string $relatedModel, array $criteria = []): ?AsEntity
+    protected function hasOne(string $relatedModel, array $criteria = []): ?object
     {
         if (!is_subclass_of($relatedModel, AsEntity::class)) {
-            throw new LogicException("The related model '$relatedModel' must be a subclass of HasEntity.");
+            throw new LogicException("The related model '$relatedModel' must be a subclass of AsEntity.");
         }
 
-        return $this->getManager()->getRepository($relatedModel::getRepositoryName())->findOneBy($criteria);
+        return $this->getEntityManager()->getRepository($relatedModel::getRepositoryName())->findOneBy($criteria);
     }
 
     protected function hasMany(string $relatedModel, array $criteria = []): SplObjectStorage
     {
         if (!is_subclass_of($relatedModel, AsEntity::class)) {
-            throw new LogicException("The related model '$relatedModel' must be a subclass of HasEntity.");
+            throw new LogicException("The related model '$relatedModel' must be a subclass of AsEntity.");
         }
 
-        return $this->getManager()->getRepository($relatedModel::getRepositoryName())->findBy($criteria);
+        return $this->getEntityManager()->getRepository($relatedModel::getRepositoryName())->findBy($criteria);
     }
 
     /**
-     * @return DoctrineManager|null
+     * @return EntityManager|null
      */
-    private function getManager(): ?DoctrineManager
+    private function getEntityManager(): ?EntityManager
     {
         if ($this->__manager === null) {
-            throw new LogicException(DoctrineManager::class . ' must be set before using this method.');
+            throw new LogicException(EntityManager::class . ' must be set before using this method.');
         }
         return $this->__manager;
     }
@@ -109,11 +106,9 @@ abstract class AsEntity extends Model
     final static public function getPrimaryKeyColumn(): string
     {
         $cache = PrimaryKeyColumnCache::getInstance();
-        if (empty($cache->get(static::class))) {
+        if (!$cache->get(static::class) instanceof \AlphaSoft\AsLinkOrm\Mapping\Entity\PrimaryKeyColumn) {
 
-            $columnsFiltered = array_filter(self::getColumns(), function (Column $column) {
-                return $column instanceof PrimaryKeyColumn;
-            });
+            $columnsFiltered = array_filter(self::getColumns(), fn(Column $column): bool => $column instanceof PrimaryKeyColumn);
 
             if (count($columnsFiltered) === 0) {
                 throw new LogicException('At least one primary key is required.');
@@ -142,7 +137,37 @@ abstract class AsEntity extends Model
         return $cache->get(static::class);
     }
 
-    abstract static public function getRepositoryName(): string;
+    static public function getTable(): string
+    {
+        $reflector = new \ReflectionClass(static::class);
+        $attributes = $reflector->getAttributes(Entity::class);
 
-    abstract static protected function columnsMapping(): array;
+        $table = $attributes[0]->getArguments()['table'] ?? null;
+        if ($table === null) {
+            throw new LogicException('table is required');
+        }
+        return $table;
+    }
+
+    static public function getRepositoryName(): string
+    {
+        $reflector = new \ReflectionClass(static::class);
+        $attributes = $reflector->getAttributes(Entity::class);
+
+        $repositoryClass = $attributes[0]->getArguments()['repositoryClass'] ?? null;
+        if ($repositoryClass === null) {
+            throw new LogicException('repositoryClass is required');
+        }
+        return $repositoryClass;
+    }
+
+    static protected function columnsMapping(): array
+    {
+        $reflector = new \ReflectionClass(static::class);
+        $columns = [];
+        foreach ($reflector->getAttributes(Column::class, \ReflectionAttribute::IS_INSTANCEOF) as $attribute) {
+            $columns[] = $attribute->newInstance();
+        }
+        return $columns;
+    }
 }

@@ -2,34 +2,23 @@
 
 namespace AlphaSoft\AsLinkOrm\Repository;
 
-use AlphaSoft\DataModel\Model;
-use AlphaSoft\DataModel\Factory\ModelFactory;
-use AlphaSoft\AsLinkOrm\DoctrineManager;
-use AlphaSoft\AsLinkOrm\Mapping\Column;
 use AlphaSoft\AsLinkOrm\Entity\AsEntity;
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\ParameterType;
+use AlphaSoft\AsLinkOrm\EntityManager;
+use AlphaSoft\AsLinkOrm\Helper\QueryHelper;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\Column;
+use AlphaSoft\DataModel\Factory\ModelFactory;
 use Doctrine\DBAL\Query\QueryBuilder;
 use SplObjectStorage;
-use function is_bool;
-use function is_int;
-use function is_null;
 
 abstract class Repository
 {
     /**
-     * @var DoctrineManager
-     */
-    protected $manager;
-
-    /**
      * @var array<AsEntity>
      */
-    private $entities = [];
+    private array $entities = [];
 
-    public function __construct(DoctrineManager $manager)
+    public function __construct(private readonly EntityManager $manager)
     {
-        $this->manager = $manager;
     }
 
     /**
@@ -37,7 +26,14 @@ abstract class Repository
      *
      * @return string The name of the table.
      */
-    abstract public function getTableName(): string;
+    final public function getTableName(): string
+    {
+        /**
+         * @var class-string<AsEntity> $entityName
+         */
+        $entityName = $this->getEntityName();
+        return $entityName::getTable();
+    }
 
     /**
      * Get the name of the model associated with this repository.
@@ -46,9 +42,9 @@ abstract class Repository
      */
     abstract public function getEntityName(): string;
 
-    public function findOneBy(array $arguments = [], array $orderBy = []): ?AsEntity
+    public function findOneBy(array $arguments = [], array $orderBy = []): ?object
     {
-        $query = $this->generateSelectQuery($arguments, $orderBy, null);
+        $query = $this->generateSelectQuery($arguments, $orderBy);
         $item = $query->fetchAssociative();
         if ($item === false) {
             return null;
@@ -75,14 +71,14 @@ abstract class Repository
             if ($property === $primaryKeyColumn) {
                 continue;
             }
-            $query->setValue($property, $query->createPositionalParameter($value, self::typeOfValue($value)));
+            $query->setValue($property, $query->createPositionalParameter($value, QueryHelper::typeOfValue($value)));
         }
         $rows = $query->executeStatement();
         $lastId = $connection->lastInsertId();
         if ($lastId !== false) {
             $entity->set($primaryKeyColumn, $lastId);
             $this->entities[$entity->getPrimaryKeyValue()] = $entity;
-            $entity->setDoctrineManager($this->manager);
+            $entity->setEntityManager($this->manager);
         }
         return $rows;
     }
@@ -97,9 +93,9 @@ abstract class Repository
             if ($property === $primaryKeyColumn) {
                 continue;
             }
-            $query->set($property, $query->createPositionalParameter($value, self::typeOfValue($value)));
+            $query->set($property, $query->createPositionalParameter($value, QueryHelper::typeOfValue($value)));
         }
-        self::generateWhereQuery($query, array_merge([$primaryKeyColumn => $entity->getPrimaryKeyValue()], $this->mapPropertiesToColumn($arguments)));
+        QueryHelper::generateWhereQuery($query, array_merge([$primaryKeyColumn => $entity->getPrimaryKeyValue()], $this->mapPropertiesToColumn($arguments)));
         return $query->executeStatement();
     }
 
@@ -109,6 +105,9 @@ abstract class Repository
         $query = $connection->createQueryBuilder();
         $query->delete($this->getTableName())
             ->where($entity::getPrimaryKeyColumn() . ' = ' . $query->createPositionalParameter($entity->getPrimaryKeyValue()));
+
+        $entity->set($entity::getPrimaryKeyColumn(), null);
+        $entity->setEntityManager(null);
 
         return $query->executeStatement();
     }
@@ -128,15 +127,13 @@ abstract class Repository
 
         $arguments = $this->mapPropertiesToColumn($arguments);
         $orderBy = $this->mapPropertiesToColumn($orderBy);
-        $properties = array_map(function (Column $column) {
-            return sprintf('`%s`', $column->getName());
-        }, $entityName::getColumns());
+        $properties = array_map(fn(Column $column): string => sprintf('`%s`', $column->getName()), $entityName::getColumns());
 
         $query = $this->createQueryBuilder();
         $query
             ->select(...$properties)
             ->from($this->getTableName());
-        self::generateWhereQuery($query, $arguments);
+        QueryHelper::generateWhereQuery($query, $arguments);
         foreach ($orderBy as $property => $order) {
             $query->orderBy($property, $order);
         }
@@ -159,17 +156,6 @@ abstract class Repository
         return $this->createQueryBuilder()->from($this->getTableName(), $alias);
     }
 
-    protected static function generateWhereQuery(QueryBuilder $query, array $arguments = []): void
-    {
-        foreach ($arguments as $property => $value) {
-            if (is_array($value)) {
-                $query->andWhere($query->expr()->in($property, $query->createPositionalParameter($value, Connection::PARAM_STR_ARRAY)));
-                continue;
-            }
-            $query->andWhere($property . ' = ' . $query->createPositionalParameter($value));
-        }
-    }
-
     final protected function mapPropertiesToColumn(array $arguments): array
     {
         /**
@@ -186,7 +172,7 @@ abstract class Repository
         return $dbArguments;
     }
 
-    final protected function createModel(array $data): AsEntity
+    final protected function createModel(array $data): object
     {
         /**
          * @var class-string<AsEntity> $entityName
@@ -202,7 +188,7 @@ abstract class Repository
         }
 
         if (is_subclass_of($entity, AsEntity::class)) {
-            $entity->setDoctrineManager($this->manager);
+            $entity->setEntityManager($this->manager);
         }
         return $entity;
     }
@@ -218,23 +204,11 @@ abstract class Repository
     }
 
 
-    protected static function typeOfValue($value): int
-    {
-        $type = ParameterType::STRING;
-        if (is_bool($value)) {
-            $type = ParameterType::BOOLEAN;
-        } elseif (is_int($value)) {
-            $type = ParameterType::INTEGER;
-        } elseif (is_null($value)) {
-            $type = ParameterType::NULL;
-        }
-        return $type;
-    }
-
     public function clear(): void
     {
         foreach ($this->entities as $objet) {
-            unset($objet);
+            $objet->setEntityManager(null);
+            $objet->set($objet::getPrimaryKeyColumn(), null);
         }
         $this->entities = [];
     }

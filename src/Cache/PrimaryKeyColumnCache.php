@@ -2,12 +2,12 @@
 
 namespace AlphaSoft\AsLinkOrm\Cache;
 
-use AlphaSoft\AsLinkOrm\Mapping\PrimaryKeyColumn;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\PrimaryKeyColumn;
 
 final class PrimaryKeyColumnCache
 {
-    private static $instance;
-    private $data = [];
+    private static ?\AlphaSoft\AsLinkOrm\Cache\PrimaryKeyColumnCache $instance = null;
+    private array $data = [];
 
     public static function getInstance(): self
     {
@@ -16,16 +16,13 @@ final class PrimaryKeyColumnCache
         }
         return self::$instance;
     }
-    public function set(string $key, PrimaryKeyColumn $primaryKeyColumn)
+    public function set(string $key, PrimaryKeyColumn $primaryKeyColumn): void
     {
         $this->data[$key] = $primaryKeyColumn;
     }
 
     public function get(string $key): ?PrimaryKeyColumn
     {
-        if (isset($this->data[$key])) {
-            return $this->data[$key];
-        }
-        return null;
+        return $this->data[$key] ?? null;
     }
 }

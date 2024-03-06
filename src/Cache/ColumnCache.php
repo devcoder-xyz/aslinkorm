@@ -2,12 +2,12 @@
 
 namespace AlphaSoft\AsLinkOrm\Cache;
 
-use AlphaSoft\AsLinkOrm\Mapping\Column;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\Column;
 
 final class ColumnCache
 {
-    private static $instance;
-    private $data = [];
+    private static ?\AlphaSoft\AsLinkOrm\Cache\ColumnCache $instance = null;
+    private array $data = [];
 
     public static function getInstance(): self
     {
@@ -16,7 +16,7 @@ final class ColumnCache
         }
         return self::$instance;
     }
-    public function set(string $key, array $columns)
+    public function set(string $key, array $columns): void
     {
         foreach ($columns as $column) {
             if (!$column instanceof Column) {
@@ -29,9 +29,6 @@ final class ColumnCache
 
     public function get(string $key): array
     {
-        if (isset($this->data[$key])) {
-            return $this->data[$key];
-        }
-        return [];
+        return $this->data[$key] ?? [];
     }
 }

@@ -2,21 +2,19 @@
 
 namespace AlphaSoft\AsLinkOrm;
 
+use AlphaSoft\AsLinkOrm\Entity\AsEntity;
 use AlphaSoft\AsLinkOrm\Repository\Repository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 
-class DoctrineManager
+class EntityManager
 {
-    /**
-     * @var Connection
-     */
-    private $connection;
+    private \Doctrine\DBAL\Connection $connection;
 
     /**
      * @var array<Repository>
      */
-    private $repositories = [];
+    private array $repositories = [];
 
     public function __construct(array $params)
     {
@@ -30,6 +28,10 @@ class DoctrineManager
 
     public function getRepository(string $repository): Repository
     {
+        if (is_subclass_of($repository, AsEntity::class)) {
+            $repository = $repository::getRepositoryName();
+        }
+
         if (!is_subclass_of($repository, Repository::class))  {
             throw new \InvalidArgumentException($repository. ' must be an instance of '.Repository::class);
         }
@@ -40,7 +42,8 @@ class DoctrineManager
         return  $this->repositories[$repository];
     }
 
-    public function clearAll(): void {
+    public function clearAll(): void
+    {
         foreach ($this->repositories as $repository) {
             $repository->clear();
         }

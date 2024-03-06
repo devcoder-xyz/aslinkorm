@@ -2,21 +2,18 @@
 
 namespace Test\AlphaSoft\AsLinkOrm\Model;
 
-use AlphaSoft\AsLinkOrm\Mapping\Column;
-use AlphaSoft\AsLinkOrm\Mapping\PrimaryKeyColumn;
 use AlphaSoft\AsLinkOrm\Entity\AsEntity;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\Column;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\Entity;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\PrimaryKeyColumn;
 use Test\AlphaSoft\AsLinkOrm\Repository\UserRepository;
 
+#[Entity(table: "user", repositoryClass: UserRepository::class)]
 final class User extends AsEntity
 {
     public function getPrimaryKeyValue(): ?int
     {
         return $this->get(self::getPrimaryKeyColumn());
-    }
-
-    static public function getRepositoryName(): string
-    {
-        return UserRepository::class;
     }
 
     public function getPosts(): \SplObjectStorage

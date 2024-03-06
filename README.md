@@ -13,7 +13,7 @@ composer require alphasoft-fr/aslink-orm
 
 ## Requirements
 
-* PHP version 7.3
+* PHP version 8.2
 
 ## Introduction
 
@@ -34,17 +34,17 @@ ASLinkORM leverages the powerful capabilities of Doctrine DBAL for efficient SQL
 
 To get started with ASLinkORM , you need to follow these steps:
 
-1. **Initialize the DoctrineManager:** In your application's entry point, initialize the `DoctrineManager` with your database configuration. Make sure to adjust the configuration according to your database setup.
+1. **Initialize the EntityManager:** In your application's entry point, initialize the `EntityManager` with your database configuration. Make sure to adjust the configuration according to your database setup.
 
 ```php
-use AlphaSoft\AsLinkOrm\DoctrineManager;
+use AlphaSoft\AsLinkOrm\EntityManager;
 
 $config = [
      'url' => 'mysql://username:password@localhost/db_name',
      // ... other options
  ];
 
- $manager = new DoctrineManager($config);
+ $manager = new EntityManager($config);
 ```
 
 2. **Create Repositories:** Create repository classes for your models by extending the `Repository` base class. Define the table name, model name, and selectable fields.
@@ -54,12 +54,7 @@ use AlphaSoft\AsLinkOrm\Repository\Repository;
 
 class UserRepository extends Repository
 {
-    public function getTableName(): string
-    {
-        return 'user'; // Name of the associated table
-    }
-    
-    public function getModelName(): string
+    public function getEntityName(): string
     {
         return User::class; // Fully qualified name of the model class
     }
@@ -68,30 +63,49 @@ class UserRepository extends Repository
 }
 ```
 
-3. **Create Models:** Create model classes by extending the `HasEntity` base class. Define relationships and any custom methods you need.
+3. **Create Models:** Create model classes by extending the `AsEntity` base class. Define relationships and any custom methods you need.
 
 ```php
-use AlphaSoft\AsLinkOrm\Relation\HasEntity;
+use AlphaSoft\AsLinkOrm\Entity\AsEntity;
 
-class User extends HasEntity 
+#[Entity(table: "user", repositoryClass: UserRepository::class)]
+class User extends AsEntity 
 {
     static protected function columnsMapping(): array
     {
         return [
-            new \AlphaSoft\AsLinkOrm\Mapping\PrimaryKeyColumn('id'),
-            new \AlphaSoft\AsLinkOrm\Mapping\Column('firstname'),
-            new \AlphaSoft\AsLinkOrm\Mapping\Column('lastname'),
-            new \AlphaSoft\AsLinkOrm\Mapping\Column('email'),
-            new \AlphaSoft\AsLinkOrm\Mapping\Column('password'),
-            new \AlphaSoft\AsLinkOrm\Mapping\Column('isActive', false, 'is_active'),
+            new \AlphaSoft\AsLinkOrm\Mapping\Entity\PrimaryKeyColumn('id'),
+            new \AlphaSoft\AsLinkOrm\Mapping\Entity\Column('firstname'),
+            new \AlphaSoft\AsLinkOrm\Mapping\Entity\Column('lastname'),
+            new \AlphaSoft\AsLinkOrm\Mapping\Entity\Column('email'),
+            new \AlphaSoft\AsLinkOrm\Mapping\Entity\Column('password'),
+            new \AlphaSoft\AsLinkOrm\Mapping\Entity\Column('isActive', false, 'is_active'),
         ];
     }
 
-    static public function getRepositoryName(): string
-    {
-        return UserRepository::class;
-    }
 
+    public function getPosts(): \SplObjectStorage
+    {
+        return $this->hasMany(Post::class, ['user_id' => $this->getPrimaryKeyValue()]);
+    }
+}
+   ```
+Or with attributes
+```php
+use AlphaSoft\AsLinkOrm\Entity\AsEntity;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\Column;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\Entity;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\PrimaryKeyColumn;
+
+#[Entity(table: "user", repositoryClass: UserRepository::class)]
+#[PrimaryKeyColumn(property: 'id')]
+#[Column(property: 'firstname')]
+#[Column(property: 'lastname')]
+#[Column(property: 'email')]
+#[Column(property: 'password')]
+#[Column(property: 'isActive', defaultValue: false, name: 'is_active')]
+class User extends AsEntity 
+{
     public function getPosts(): \SplObjectStorage
     {
         return $this->hasMany(Post::class, ['user_id' => $this->getPrimaryKeyValue()]);
@@ -103,17 +117,20 @@ class User extends HasEntity
 In ASLinkORM , repositories serve as gateways to access and manipulate data in the underlying database tables. To access a repository, you can use the `DoctrineManager` instance that you've set up. Here's how you can retrieve a repository using the manager:
 
 ```php
-use Your\Namespace\DoctrineManager;
+use AlphaSoft\AsLinkOrm\EntityManager;
 use Your\Namespace\Repository\UserRepository;
+use Your\Namespace\Entity\User;
 
 // Assuming you have a configured DoctrineManager instance
-$manager = new DoctrineManager(/* configuration options */);
+$manager = new EntityManager(/* configuration options */);
 
 // Retrieving a UserRepository instance
 $userRepository = $manager->getRepository(UserRepository::class);
+// OR
+$userRepository = $manager->getRepository(User::class);
 ```
 
-In this example, you create a `DoctrineManager` instance and then use it to retrieve a `UserRepository` instance. You can replace `UserRepository` with the name of any repository class you've defined.
+In this example, you create a `EntityManager` instance and then use it to retrieve a `UserRepository` instance. You can replace `UserRepository` with the name of any repository class you've defined.
 
 
 ## Basic Operations
@@ -241,6 +258,7 @@ The `hasOne` method establishes a one-to-one relationship between the current mo
 ```php
 use AlphaSoft\AsLinkOrm\Entity\AsEntity;
 
+#[Entity(table: "user", repositoryClass: UserRepository::class)]
 class User extends AsEntity
 {
     // ... (other code)
@@ -261,6 +279,7 @@ The `hasMany` method establishes a one-to-many relationship between the current 
 ```php
 use AlphaSoft\AsLinkOrm\Entity\AsEntity;
 
+#[Entity(table: "user", repositoryClass: UserRepository::class)]
 class User extends AsEntity
 {
     // ... (other code)
@@ -299,24 +318,23 @@ By leveraging the `hasOne` and `hasMany` methods, you can efficiently retrieve a
 
 ## Defining Column Mappings
 
-ASLinkORM provides the ability to define column mappings for your models, giving you flexibility in managing your data.
+ASLinkORM provides the flexibility to define column mappings for your models, allowing you to seamlessly manage your data. This can be achieved through the traditional method using the `columnsMapping()` function or the modern attribute-based approach.
 
-### `columnsMapping()`
+### Traditional Approach: `columnsMapping()`
 
-
-The `Column` object is used within the `columnsMapping()` method to define how model attributes correspond to database columns. It allows you to specify a default value and an optional database column name if it differs from the attribute name in the model.
+The `Column` object is utilized within the `columnsMapping()` method to establish the relationship between model attributes and corresponding database columns. It enables you to specify default values and optional database column names if they differ from the attribute names in the model.
 
 ```php
-use AlphaSoft\AsLinkOrm\Mapping\Column;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\Column;
 
 $column1 = new Column('firstname'); // Basic usage, no specific column name specified
 $column2 = new Column('lastname', 'Doe'); // Specifying a default value
 $column3 = new Column('email', null, 'user_email'); // Specifying a custom database column name
 ```
 
-The `columnsMapping()` method serves a dual purpose: it defines the column name mappings for attributes of the model, allowing you to specify which columns to search for during SELECT operations, as well as enabling you to set default values for these attributes.
+The `columnsMapping()` method serves a dual purpose: it defines the column name mappings for model attributes, specifying which columns to consider during SELECT operations. Additionally, it allows you to set default values for these attributes.
 
-The `columnsMapping()` method should always include the `PrimaryKeyColumn` object, which is essential for identifying the unique column used to search for an element in the database. There should be only one `PrimaryKeyColumn` object defined in the `columnsMapping()` method.
+The method should always include the `PrimaryKeyColumn` object, crucial for identifying the unique column used to search for an element in the database. There should be only one `PrimaryKeyColumn` object defined in the `columnsMapping()` method.
 
 ```php
 static protected function columnsMapping(): array
@@ -331,6 +349,29 @@ static protected function columnsMapping(): array
     ];
 }
 ```
+
+### Attribute-Based Approach:
+
+Alternatively, you can use attributes directly above your class properties to define column mappings. This modern approach streamlines the code and enhances readability:
+
+```php
+use AlphaSoft\AsLinkOrm\Mapping\Entity\Column;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\PrimaryKeyColumn;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\Entity;
+
+#[PrimaryKeyColumn(property: 'id')]
+#[Column(property: 'firstname')]
+#[Column(property: 'lastname')]
+#[Column(property: 'email')]
+#[Column(property: 'password')]
+#[Column(property: 'isActive', defaultValue: false, name: 'is_active')]
+class User extends AsEntity 
+{
+    // ... additional class code
+}
+```
+
+Choose the approach that aligns with your coding preferences and project standards. Both methods achieve the same goal of defining column mappings for your models in ASLinkORM.
 
 In this example, the attribute `isActive` in the `User` model corresponds to the column name `is_active` in the database table. When fetching or inserting data, the ORM will automatically map the attribute names to the appropriate column names using the defined mappings.
 

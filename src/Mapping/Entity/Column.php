@@ -1,29 +1,12 @@
 <?php
 
-namespace AlphaSoft\AsLinkOrm\Mapping;
+namespace AlphaSoft\AsLinkOrm\Mapping\Entity;
 
-class Column
+#[\Attribute(\Attribute::TARGET_CLASS|\Attribute::IS_REPEATABLE)]
+class Column implements \Stringable
 {
-    /**
-     * @var string
-     */
-    private $property;
-
-    /**
-     * @var mixed
-     */
-    private $defaultValue = null;
-
-    /**
-     * @var string|null
-     */
-    private $name;
-
-    final public function __construct(string $property, $defaultValue = null, string $name = null)
+    public function __construct(private readonly string $property, private readonly mixed $defaultValue = null, private readonly ?string $name = null)
     {
-        $this->property = $property;
-        $this->defaultValue = $defaultValue;
-        $this->name = $name;
     }
 
     final public function __toString(): string
