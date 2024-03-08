@@ -2,20 +2,22 @@
 
 namespace AlphaSoft\AsLinkOrm\Entity;
 
-use AlphaSoft\AsLinkOrm\Cache\ColumnCache;
-use AlphaSoft\AsLinkOrm\Cache\PrimaryKeyColumnCache;
+use AlphaSoft\AsLinkOrm\Coordinator\EntityRelationCoordinator;
 use AlphaSoft\AsLinkOrm\EntityManager;
+use AlphaSoft\AsLinkOrm\Mapper\ColumnMapper;
+use AlphaSoft\AsLinkOrm\Mapper\EntityMapper;
+use AlphaSoft\AsLinkOrm\Mapper\OneToManyRelationMapper;
 use AlphaSoft\AsLinkOrm\Mapping\Entity\Column;
-use AlphaSoft\AsLinkOrm\Mapping\Entity\Entity;
-use AlphaSoft\AsLinkOrm\Mapping\Entity\PrimaryKeyColumn;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\JoinColumn;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\OneToMany;
+use AlphaSoft\AsLinkOrm\Serializer\SerializerToDb;
+use AlphaSoft\AsLinkOrm\Serializer\SerializerToDbForUpdate;
 use AlphaSoft\DataModel\Model;
-use LogicException;
 use SplObjectStorage;
 
 abstract class AsEntity extends Model
 {
-    private ?\AlphaSoft\AsLinkOrm\EntityManager $__manager = null;
-
+    private ?EntityRelationCoordinator $__relationCoordinator = null;
     private array $_modifiedAttributes = [];
 
     final public function set(string $property, $value): Model
@@ -25,64 +27,62 @@ abstract class AsEntity extends Model
         return $this;
     }
 
+    public function getModifiedAttributes(): array
+    {
+        return $this->_modifiedAttributes;
+    }
+
     final public function toDb(): array
     {
-        $dbData = [];
-        foreach (self::getColumns() as $column) {
-            $property = $column->getProperty();
-            if (!array_key_exists($property, $this->attributes)) {
-                continue;
-            }
-            $dbData[sprintf('`%s`', $column->getName())] = $this->attributes[$property];
-        }
-        return $dbData;
+        return (new SerializerToDb())->serialize($this);
     }
 
     final public function toDbForUpdate(): array
     {
-        $dbData = [];
-        foreach (self::getColumns() as $column) {
-            $property = $column->getProperty();
-            if (!array_key_exists($property, $this->_modifiedAttributes)) {
-                continue;
-            }
-            $dbData[sprintf('`%s`', $column->getName())] = $this->_modifiedAttributes[$property];
-        }
-        return $dbData;
+        return (new SerializerToDbForUpdate())->serialize($this);
     }
 
     public function setEntityManager(?EntityManager $manager): void
     {
-        $this->__manager = $manager;
+        $this->__relationCoordinator = $manager ? new EntityRelationCoordinator($manager) : null;
     }
 
     protected function hasOne(string $relatedModel, array $criteria = []): ?object
     {
-        if (!is_subclass_of($relatedModel, AsEntity::class)) {
-            throw new LogicException("The related model '$relatedModel' must be a subclass of AsEntity.");
+        $hasColumn = false;
+        foreach (static::getColumns() as $column) {
+            if (!$column instanceof JoinColumn) {
+                continue;
+            }
+
+            if ($column->getTargetEntity() == $relatedModel) {
+                $hasColumn = true;
+                break;
+            }
         }
 
-        return $this->getEntityManager()->getRepository($relatedModel::getRepositoryName())->findOneBy($criteria);
+        if ($hasColumn === false) {
+            throw new \LogicException("No JoinColumn relation defined for the related model '$relatedModel'.");
+        }
+
+        return $this->__relationCoordinator?->hasOne($relatedModel, $criteria) ?: null;
     }
 
     protected function hasMany(string $relatedModel, array $criteria = []): SplObjectStorage
     {
-        if (!is_subclass_of($relatedModel, AsEntity::class)) {
-            throw new LogicException("The related model '$relatedModel' must be a subclass of AsEntity.");
+        $defaultStorage = null;
+        foreach (static::getOneToManyRelations() as $oneToManyRelation) {
+            if ($oneToManyRelation->getTargetEntity() == $relatedModel) {
+                $defaultStorage = $oneToManyRelation->getStorage();
+                break;
+            }
         }
 
-        return $this->getEntityManager()->getRepository($relatedModel::getRepositoryName())->findBy($criteria);
-    }
-
-    /**
-     * @return EntityManager|null
-     */
-    private function getEntityManager(): ?EntityManager
-    {
-        if ($this->__manager === null) {
-            throw new LogicException(EntityManager::class . ' must be set before using this method.');
+        if ($defaultStorage === null) {
+            throw new \LogicException("No OneToMany relation defined for the related model '$relatedModel'.");
         }
-        return $this->__manager;
+
+        return $this->__relationCoordinator?->hasMany($relatedModel, $criteria) ?: $defaultStorage;
     }
 
     final static protected function getDefaultAttributes(): array
@@ -105,24 +105,7 @@ abstract class AsEntity extends Model
 
     final static public function getPrimaryKeyColumn(): string
     {
-        $cache = PrimaryKeyColumnCache::getInstance();
-        if (!$cache->get(static::class) instanceof \AlphaSoft\AsLinkOrm\Mapping\Entity\PrimaryKeyColumn) {
-
-            $columnsFiltered = array_filter(self::getColumns(), fn(Column $column): bool => $column instanceof PrimaryKeyColumn);
-
-            if (count($columnsFiltered) === 0) {
-                throw new LogicException('At least one primary key is required.');
-            }
-
-            if (count($columnsFiltered) > 1) {
-                throw new LogicException('Only one primary key is allowed.');
-            }
-
-            $primaryKey = $columnsFiltered[0];
-
-            $cache->set(static::class, $primaryKey);
-        }
-        return $cache->get(static::class)->getName();
+        return ColumnMapper::getPrimaryKeyColumn(static::class);
     }
 
     /**
@@ -130,44 +113,24 @@ abstract class AsEntity extends Model
      */
     final static public function getColumns(): array
     {
-        $cache = ColumnCache::getInstance();
-        if (empty($cache->get(static::class))) {
-            $cache->set(static::class, static::columnsMapping());
-        }
-        return $cache->get(static::class);
+        return ColumnMapper::getColumns(static::class);
+    }
+
+    /**
+     * @return array<OneToMany>
+     */
+    final static public function getOneToManyRelations(): array
+    {
+        return OneToManyRelationMapper::getOneToManyRelations(static::class);
     }
 
     static public function getTable(): string
     {
-        $reflector = new \ReflectionClass(static::class);
-        $attributes = $reflector->getAttributes(Entity::class);
-
-        $table = $attributes[0]->getArguments()['table'] ?? null;
-        if ($table === null) {
-            throw new LogicException('table is required');
-        }
-        return $table;
+        return EntityMapper::getTable(static::class);
     }
 
     static public function getRepositoryName(): string
     {
-        $reflector = new \ReflectionClass(static::class);
-        $attributes = $reflector->getAttributes(Entity::class);
-
-        $repositoryClass = $attributes[0]->getArguments()['repositoryClass'] ?? null;
-        if ($repositoryClass === null) {
-            throw new LogicException('repositoryClass is required');
-        }
-        return $repositoryClass;
-    }
-
-    static protected function columnsMapping(): array
-    {
-        $reflector = new \ReflectionClass(static::class);
-        $columns = [];
-        foreach ($reflector->getAttributes(Column::class, \ReflectionAttribute::IS_INSTANCEOF) as $attribute) {
-            $columns[] = $attribute->newInstance();
-        }
-        return $columns;
+        return EntityMapper::getRepositoryName(static::class);
     }
 }

@@ -3,6 +3,7 @@
   "description": "ASLinkORM is a lightweight Object-Relational Mapping (ORM) library ",
   "type": "library",
   "license": "MIT",
+  "bin": ["bin/aslinkorm"],
   "authors": [
     {
       "name": "F. Michel"
@@ -23,7 +24,8 @@
     "ext-pdo": "*",
     "alphasoft-fr/data-model": "^2.0",
     "doctrine/dbal": "^3.3",
-    "ext-json": "*"
+    "ext-json": "*",
+    "symfony/console": "^6.4"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.4",

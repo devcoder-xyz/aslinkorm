@@ -343,4 +343,12 @@ class RepositoryTest extends TestCase
         $userRepository =  $this->manager->getRepository(User::class);
         $this->assertInstanceOf(UserRepository::class, $userRepository);
     }
+
+    public function testRelationsDefaultsValues(): void
+    {
+        $this->insertTestData();
+
+        $user = new User();
+        $this->assertTrue( $user->getPosts()->count() == 0);
+    }
 }

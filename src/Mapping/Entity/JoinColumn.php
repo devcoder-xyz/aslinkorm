@@ -13,7 +13,7 @@ final class JoinColumn extends Column
         ?string $name = null
     )
     {
-        parent::__construct($property, $defaultValue, $name);
+        parent::__construct($property, $this->getTargetEntity(),$defaultValue, $name);
     }
 
     public function getReferencedColumnName(): string
@@ -24,5 +24,16 @@ final class JoinColumn extends Column
     public function getTargetEntity(): string
     {
         return $this->targetEntity;
+    }
+
+    public function getShortName(): string
+    {
+        return (new \ReflectionClass($this->getTargetEntity()))->getShortName();
+    }
+
+    public function getType(): string
+    {
+       return  '\\'.ltrim(parent::getType(), '\\');
+       
     }
 }

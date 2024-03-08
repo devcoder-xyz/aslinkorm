@@ -5,7 +5,12 @@ namespace AlphaSoft\AsLinkOrm\Mapping\Entity;
 #[\Attribute(\Attribute::TARGET_CLASS|\Attribute::IS_REPEATABLE)]
 class Column implements \Stringable
 {
-    public function __construct(private readonly string $property, private readonly mixed $defaultValue = null, private readonly ?string $name = null)
+    public function __construct(
+        private readonly string $property,
+        private readonly string $type = 'string',
+        private readonly mixed $defaultValue = null,
+        private readonly ?string $name = null
+    )
     {
     }
 
@@ -27,8 +32,13 @@ class Column implements \Stringable
     /**
      * @return mixed|null
      */
-    final public function getDefaultValue()
+    final public function getDefaultValue(): mixed
     {
         return $this->defaultValue;
+    }
+
+    public function getType(): string
+    {
+        return $this->type;
     }
 }
