@@ -59,6 +59,13 @@ abstract class Repository
 
         return $this->createCollection($data);
     }
+    public function save(AsEntity $entity): int
+    {
+        if ($entity->getPrimaryKeyValue()) {
+            return $this->update($entity);
+        }
+        return $this->insert($entity);
+    }
 
     public function insert(AsEntity $entity): int
     {
@@ -181,7 +188,7 @@ abstract class Repository
         $primaryKeyValue = $data[$entityName::getPrimaryKeyColumn()];
         if (array_key_exists($primaryKeyValue, $this->entities)) {
             $entity = $this->entities[$primaryKeyValue];
-            $entity->hydrate($data);  // Hydrate with new data
+            $entity->hydrate($data);
         } else {
             $entity = ModelFactory::createModel($this->getEntityName(), $data);
             $this->entities[$primaryKeyValue] = $entity;
@@ -202,7 +209,6 @@ abstract class Repository
         }
         return $storage;
     }
-
 
     public function clear(): void
     {

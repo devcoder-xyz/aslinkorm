@@ -3,6 +3,8 @@
 namespace AlphaSoft\AsLinkOrm;
 
 use AlphaSoft\AsLinkOrm\Entity\AsEntity;
+use AlphaSoft\AsLinkOrm\Platform\PlatformInterface;
+use AlphaSoft\AsLinkOrm\Platform\SqlPlatform;
 use AlphaSoft\AsLinkOrm\Repository\Repository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
@@ -16,7 +18,7 @@ class EntityManager
      */
     private array $repositories = [];
 
-    public function __construct(array $params)
+    public function __construct(array $params, private $platformClassName = null)
     {
         $this->connection = DriverManager::getConnection($params);
     }
@@ -40,6 +42,12 @@ class EntityManager
             $this->repositories[$repository] = new $repository($this);
         }
         return  $this->repositories[$repository];
+    }
+
+    public function createDatabasePlatform(): PlatformInterface
+    {
+        $platformClassName = $this->platformClassName ?: SqlPlatform::class;
+        return new $platformClassName($this->getConnection());
     }
 
     public function clearAll(): void

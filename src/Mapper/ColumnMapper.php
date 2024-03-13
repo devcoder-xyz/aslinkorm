@@ -13,7 +13,7 @@ final class ColumnMapper
     static public function getPrimaryKeyColumn(string $class): string
     {
         $cache = PrimaryKeyColumnCache::getInstance();
-        if (!$cache->get($class) instanceof \AlphaSoft\AsLinkOrm\Mapping\Entity\PrimaryKeyColumn) {
+        if (!$cache->get($class) instanceof PrimaryKeyColumn) {
 
             $columnsFiltered = array_filter(self::getColumns($class), fn(Column $column): bool => $column instanceof PrimaryKeyColumn);
 

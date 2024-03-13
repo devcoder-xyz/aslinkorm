@@ -43,5 +43,4 @@ final class Post extends AsEntity
         $this->set('user_id', $user->getPrimaryKeyValue());
         return $this;
     }
-
 }

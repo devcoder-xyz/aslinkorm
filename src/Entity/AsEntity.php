@@ -20,10 +20,14 @@ abstract class AsEntity extends Model
     private ?EntityRelationCoordinator $__relationCoordinator = null;
     private array $_modifiedAttributes = [];
 
-    final public function set(string $property, $value): Model
+    final public function set(string $property, mixed $value): static
     {
+        $property = static::mapColumnToProperty($property);
+        if ($value !== $this->getOrNull($property)) {
+            $this->_modifiedAttributes[$property] = $value;
+        }
         parent::set($property, $value);
-        $this->_modifiedAttributes[$property] = $value;
+
         return $this;
     }
 

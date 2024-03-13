@@ -16,6 +16,7 @@ final class OneToManyCache
         }
         return self::$instance;
     }
+
     public function set(string $key, array $oneToManyRelations): void
     {
         foreach ($oneToManyRelations as $oneToManyRelation) {

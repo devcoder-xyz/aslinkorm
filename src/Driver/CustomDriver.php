@@ -2,6 +2,9 @@
 
 namespace AlphaSoft\AsLinkOrm\Driver;
 
+use AlphaSoft\AsLinkOrm\Platform\AssqlPlatform;
+use AlphaSoft\AsLinkOrm\Platform\PlatformInterface;
+use AlphaSoft\AsLinkOrm\Platform\SqlPlatform;
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Driver\PDO\Connection;
 use Doctrine\DBAL\Driver\PDO\Exception;
@@ -34,4 +37,5 @@ final class CustomDriver extends Driver\AbstractMySQLDriver
 
         return new Connection($pdo);
     }
+
 }
