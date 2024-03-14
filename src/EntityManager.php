@@ -2,6 +2,7 @@
 
 namespace AlphaSoft\AsLinkOrm;
 
+use AlphaSoft\AsLinkOrm\Driver\DriverInterface;
 use AlphaSoft\AsLinkOrm\Entity\AsEntity;
 use AlphaSoft\AsLinkOrm\Platform\PlatformInterface;
 use AlphaSoft\AsLinkOrm\Platform\SqlPlatform;
@@ -18,7 +19,7 @@ class EntityManager
      */
     private array $repositories = [];
 
-    public function __construct(array $params, private $platformClassName = null)
+    public function __construct(array $params)
     {
         $this->connection = DriverManager::getConnection($params);
     }
@@ -46,8 +47,11 @@ class EntityManager
 
     public function createDatabasePlatform(): PlatformInterface
     {
-        $platformClassName = $this->platformClassName ?: SqlPlatform::class;
-        return new $platformClassName($this->getConnection());
+        $driver = $this->connection->getDriver();
+        if ($driver instanceof DriverInterface) {
+            return $driver->createDatabasePlatform($this->getConnection());
+        }
+        throw new \InvalidArgumentException(get_class($driver) . ' must implement the ' . DriverInterface::class . ' interface in order to create the database platform.');
     }
 
     public function clearAll(): void

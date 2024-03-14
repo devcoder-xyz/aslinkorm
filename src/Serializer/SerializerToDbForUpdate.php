@@ -4,10 +4,15 @@ namespace AlphaSoft\AsLinkOrm\Serializer;
 
 use AlphaSoft\AsLinkOrm\Entity\AsEntity;
 
-class SerializerToDbForUpdate
+final readonly class SerializerToDbForUpdate
 {
-    public function serialize(AsEntity $entity): array
+    public function __construct(private AsEntity $entity)
     {
+    }
+
+    public function serialize(): array
+    {
+        $entity = $this->entity;
         $dbData = [];
         $modifiedAttributes = $entity->getModifiedAttributes();
         foreach ($entity::getColumns() as $column) {

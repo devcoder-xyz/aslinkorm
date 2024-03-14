@@ -38,12 +38,12 @@ abstract class AsEntity extends Model
 
     final public function toDb(): array
     {
-        return (new SerializerToDb())->serialize($this);
+        return (new SerializerToDb($this))->serialize();
     }
 
     final public function toDbForUpdate(): array
     {
-        return (new SerializerToDbForUpdate())->serialize($this);
+        return (new SerializerToDbForUpdate($this))->serialize();
     }
 
     public function setEntityManager(?EntityManager $manager): void

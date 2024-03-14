@@ -31,4 +31,6 @@ require AS_LINK_ORM_COMPOSER_INSTALL;
 
 $application = new Application();
 $application->add(new \AlphaSoft\AsLinkOrm\Command\MakeAccessorsCommand());
+$application->add(new \AlphaSoft\AsLinkOrm\Command\DatabaseCreateCommand());
+$application->add(new \AlphaSoft\AsLinkOrm\Command\DatabaseDropCommand());
 $application->run();

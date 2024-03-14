@@ -19,6 +19,12 @@ class SqlPlatform implements PlatformInterface
         return $this->params['dbname'];
     }
 
+    public function listTables(): array
+    {
+        $query = $this->connection->executeQuery('SHOW TABLES');
+        return $query->fetchAllAssociative();
+    }
+
     public function listDatabases(): array
     {
         $query = $this->getServerConnection()->executeQuery('SHOW DATABASES');
@@ -42,6 +48,7 @@ class SqlPlatform implements PlatformInterface
         $this->getServerConnection()->executeQuery(sprintf('DROP DATABASE "%s"', $this->getDatabaseName()));
         $this->getServerConnection()->close();
     }
+
     private function getServerConnection(): Connection
     {
         if ($this->serverConnection === null) {
