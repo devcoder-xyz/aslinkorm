@@ -3,12 +3,12 @@
 namespace AlphaSoft\AsLinkOrm\Driver;
 
 use AlphaSoft\AsLinkOrm\Platform\PlatformInterface;
-use AlphaSoft\AsLinkOrm\Platform\SqlPlatform;
+use AlphaSoft\AsLinkOrm\Platform\AssqlPlatform;
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Driver\PDO\Connection;
 use Doctrine\DBAL\Driver\PDO\Exception;
 
-final class SqlDriver extends Driver\AbstractMySQLDriver implements DriverInterface
+final class AssqlDriver extends Driver\AbstractMySQLDriver implements DriverInterface
 {
     /**
      * {@inheritdoc}
@@ -39,6 +39,6 @@ final class SqlDriver extends Driver\AbstractMySQLDriver implements DriverInterf
 
     public function createDatabasePlatform(\Doctrine\DBAL\Connection $connection): PlatformInterface
     {
-        return new SqlPlatform($connection);
+        return new AssqlPlatform($connection);
     }
 }

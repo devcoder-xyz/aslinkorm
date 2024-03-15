@@ -5,7 +5,7 @@ namespace AlphaSoft\AsLinkOrm\Platform;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 
-class SqlPlatform implements PlatformInterface
+class AssqlPlatform implements PlatformInterface
 {
     private ?Connection $serverConnection = null;
     private array $params;

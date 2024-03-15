@@ -5,7 +5,7 @@ namespace AlphaSoft\AsLinkOrm;
 use AlphaSoft\AsLinkOrm\Driver\DriverInterface;
 use AlphaSoft\AsLinkOrm\Entity\AsEntity;
 use AlphaSoft\AsLinkOrm\Platform\PlatformInterface;
-use AlphaSoft\AsLinkOrm\Platform\SqlPlatform;
+use AlphaSoft\AsLinkOrm\Platform\AssqlPlatform;
 use AlphaSoft\AsLinkOrm\Repository\Repository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;

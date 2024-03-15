@@ -11,7 +11,7 @@ final class EntityMapper
         $reflector = new \ReflectionClass($class);
         $attributes = $reflector->getAttributes(Entity::class);
 
-        $table = $attributes[0]->getArguments()['table'] ?? null;
+        $table = $attributes[0]?->getArguments()['table'] ?? null;
         if ($table === null) {
             throw new \LogicException('table is required');
         }

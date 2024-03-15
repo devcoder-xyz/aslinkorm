@@ -3,7 +3,7 @@
 namespace Test\AlphaSoft\AsLinkOrm;
 
 use AlphaSoft\AsLinkOrm\EntityManager;
-use AlphaSoft\AsLinkOrm\Platform\SqlPlatform;
+use AlphaSoft\AsLinkOrm\Platform\AssqlPlatform;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Test\AlphaSoft\AsLinkOrm\Model\Post;
