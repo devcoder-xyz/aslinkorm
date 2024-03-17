@@ -337,6 +337,32 @@ class RepositoryTest extends TestCase
 
     }
 
+    public function testPersistAndFlush(): void
+    {
+
+        $user_1 = new User([
+            'firstname' => 'John',
+            'lastname' => 'Doe',
+            'email' => 'john@example.com',
+            'password' => 'secret',
+            'isActive' => true,
+        ]);
+
+        $user_2 = new User([
+            'firstname' => 'Jane',
+            'lastname' => 'Smith',
+            'email' => 'jane@example.com',
+            'password' => 'password',
+            'isActive' => true,
+        ]);
+        $this->manager->persist($user_1);
+        $this->manager->persist($user_2);
+        $this->manager->flush();
+
+        $users = $this->userRepository->findBy([]);
+        $this->assertCount(2, iterator_to_array($users, false));
+    }
+
     public function testGetRepositoriesByEntityName(): void
     {
         $this->insertTestData();

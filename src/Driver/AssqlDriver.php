@@ -2,8 +2,11 @@
 
 namespace AlphaSoft\AsLinkOrm\Driver;
 
+use AlphaSoft\AsLinkOrm\AsLinkConnection;
 use AlphaSoft\AsLinkOrm\Platform\PlatformInterface;
 use AlphaSoft\AsLinkOrm\Platform\AssqlPlatform;
+use AlphaSoft\AsLinkOrm\Schema\AssqlSchema;
+use AlphaSoft\AsLinkOrm\Schema\SchemaInterface;
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Driver\PDO\Connection;
 use Doctrine\DBAL\Driver\PDO\Exception;
@@ -37,8 +40,13 @@ final class AssqlDriver extends Driver\AbstractMySQLDriver implements DriverInte
         return new Connection($pdo);
     }
 
-    public function createDatabasePlatform(\Doctrine\DBAL\Connection $connection): PlatformInterface
+    public function createDatabasePlatform(AsLinkConnection $connection): PlatformInterface
     {
-        return new AssqlPlatform($connection);
+        return new AssqlPlatform($connection, $this->createDatabaseSchema());
+    }
+
+    public function createDatabaseSchema(): SchemaInterface
+    {
+        return new AssqlSchema();
     }
 }

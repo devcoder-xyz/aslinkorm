@@ -2,6 +2,7 @@
 
 namespace AlphaSoft\AsLinkOrm\Repository;
 
+use AlphaSoft\AsLinkOrm\Debugger\SqlDebugger;
 use AlphaSoft\AsLinkOrm\Entity\AsEntity;
 use AlphaSoft\AsLinkOrm\EntityManager;
 use AlphaSoft\AsLinkOrm\Helper\QueryHelper;

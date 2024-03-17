@@ -2,6 +2,8 @@
 
 namespace AlphaSoft\AsLinkOrm\Platform;
 
+use AlphaSoft\AsLinkOrm\AsLinkConnection;
+use AlphaSoft\AsLinkOrm\Schema\SchemaInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 
@@ -9,7 +11,7 @@ class AssqlPlatform implements PlatformInterface
 {
     private ?Connection $serverConnection = null;
     private array $params;
-    public function __construct(private readonly Connection $connection)
+    public function __construct(private readonly AsLinkConnection $connection, private readonly SchemaInterface $schema)
     {
         $this->params = $connection->getParams();
     }
@@ -21,31 +23,31 @@ class AssqlPlatform implements PlatformInterface
 
     public function listTables(): array
     {
-        $query = $this->connection->executeQuery('SHOW TABLES');
+        $query = $this->connection->executeQuery($this->schema->showTables());
         return $query->fetchAllAssociative();
     }
 
     public function listDatabases(): array
     {
-        $query = $this->getServerConnection()->executeQuery('SHOW DATABASES');
+        $query = $this->getServerConnection()->executeQuery($this->schema->showDatabases());
         $data = $query->fetchAllAssociative();
         $this->getServerConnection()->close();
         return $data;
     }
     public function createDatabase(): void
     {
-        $this->getServerConnection()->executeQuery(sprintf('CREATE DATABASE "%s"', $this->getDatabaseName()));
+        $this->getServerConnection()->executeQuery($this->schema->createDatabase($this->getDatabaseName()));
         $this->getServerConnection()->close();
     }
     public function createDatabaseIfNotExists(): void
     {
-        $this->getServerConnection()->executeQuery(sprintf('CREATE DATABASE IF NOT EXISTS "%s"', $this->getDatabaseName()));
+        $this->getServerConnection()->executeQuery($this->schema->createDatabaseIfNotExists($this->getDatabaseName()));
         $this->getServerConnection()->close();
     }
 
     public function dropDatabase(): void
     {
-        $this->getServerConnection()->executeQuery(sprintf('DROP DATABASE "%s"', $this->getDatabaseName()));
+        $this->getServerConnection()->executeQuery($this->schema->dropDatabase($this->getDatabaseName()));
         $this->getServerConnection()->close();
     }
 
