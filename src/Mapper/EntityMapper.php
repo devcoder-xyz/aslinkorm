@@ -11,7 +11,15 @@ final class EntityMapper
         $reflector = new \ReflectionClass($class);
         $attributes = $reflector->getAttributes(Entity::class);
 
-        $table = $attributes[0]?->getArguments()['table'] ?? null;
+        if (count($attributes) === 0) {
+            throw new \LogicException(sprintf('%s: At least one %s attribute is requirer', $class, Entity::class));
+        }
+
+        if (count($attributes) > 1) {
+            throw new \LogicException(sprintf('%s: Only one %s is allowed.', $class, Entity::class));
+        }
+
+        $table = $attributes[0]->getArguments()['table'] ?? null;
         if ($table === null) {
             throw new \LogicException('table is required');
         }
