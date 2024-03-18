@@ -62,9 +62,14 @@ class AssqlPlatform implements PlatformInterface
         return $this->connection->executeStatement($this->schema->createTable($tableName, $columns, $options));
     }
 
+    public function addColumn(string $tableName, string $columnName, string $columnType): int
+    {
+        return $this->connection->executeStatement($this->schema->addColumn($tableName,$columnName, $columnType));
+    }
+
     public function dropTable(string $tableName): int
     {
-        return $this->connection->executeStatement($this->schema->dropTable($tableName ));
+        return $this->connection->executeStatement($this->schema->dropTable($tableName));
     }
 
     public function dropColumn(string $tableName, string $columnName): int

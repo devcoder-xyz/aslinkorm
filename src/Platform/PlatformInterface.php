@@ -54,6 +54,7 @@ interface PlatformInterface
 
     public function createTable(string $tableName, array $columns, array $options = []): int;
     public function dropTable(string $tableName): int;
+    public function addColumn(string $tableName, string $columnName, string $columnType): int;
     public function dropColumn(string $tableName, string $columnName): int;
     public function renameColumn(string $tableName, string $oldColumnName, string $newColumnName): int;
 }

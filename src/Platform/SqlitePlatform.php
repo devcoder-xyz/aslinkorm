@@ -87,6 +87,11 @@ class SqlitePlatform implements PlatformInterface
         return $this->connection->executeStatement($this->schema->dropTable($tableName));
     }
 
+    public function addColumn(string $tableName, string $columnName, string $columnType): int
+    {
+        return $this->connection->executeStatement($this->schema->addColumn($tableName,$columnName, $columnType));
+    }
+
     public function dropColumn(string $tableName, string $columnName): int
     {
         return $this->connection->executeStatement($this->schema->dropColumn($tableName, $columnName));

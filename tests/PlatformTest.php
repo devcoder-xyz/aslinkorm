@@ -82,6 +82,23 @@ class PlatformTest extends TestCase
         $this->assertCount(5, $platform->listTableColumns('user'));
     }
 
+    public function testAddColumn()
+    {
+        $platform = $this->manager->createDatabasePlatform();
+        $platform->createTable('user', [
+            'id' => 'INTEGER PRIMARY KEY',
+            'firstname' => 'TEXT',
+            'lastname' => 'TEXT',
+            'email' => 'TEXT',
+            'password' => 'TEXT',
+            'is_active' => 'INTEGER',
+        ]);
+
+        $this->assertCount(6, $platform->listTableColumns('user'));
+        $platform->addColumn('user', 'username', 'TEXT');
+        $this->assertCount(7, $platform->listTableColumns('user'));
+    }
+
     public function testRenameColumn()
     {
         $platform = $this->manager->createDatabasePlatform();
