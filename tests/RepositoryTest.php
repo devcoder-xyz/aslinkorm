@@ -2,8 +2,10 @@
 
 namespace Test\AlphaSoft\AsLinkOrm;
 
+use AlphaSoft\AsLinkOrm\Driver\SqliteDriver;
 use AlphaSoft\AsLinkOrm\EntityManager;
-use AlphaSoft\AsLinkOrm\Platform\AssqlPlatform;
+use AlphaSoft\AsLinkOrm\Repository\Repository;
+use Doctrine\DBAL\Connection;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Test\AlphaSoft\AsLinkOrm\Model\Post;
@@ -13,22 +15,22 @@ use Test\AlphaSoft\AsLinkOrm\Repository\UserRepository;
 
 class RepositoryTest extends TestCase
 {
-    private \Doctrine\DBAL\Connection $connection;
+    private Connection $connection;
     private EntityManager $manager;
-    private \AlphaSoft\AsLinkOrm\Repository\Repository $userRepository;
-    private \AlphaSoft\AsLinkOrm\Repository\Repository $postRepository;
+    private Repository $userRepository;
+    private Repository $postRepository;
 
     protected function setUp(): void
     {
         $manager = new EntityManager([
-            'url' => 'sqlite:///:memory:',
+            'driver' => null,
+            'driverClass' => SqliteDriver::class,
+            'memory' => true,
             'driverOptions' => [PDO::ATTR_EMULATE_PREPARES => FALSE, PDO::FETCH_NUM => true]
         ]);
 
         $this->connection = $manager->getConnection();
-
         $this->setUpDatabaseSchema();
-
 
         $this->manager = $manager;
         $this->userRepository = $manager->getRepository(UserRepository::class);
@@ -154,6 +156,7 @@ class RepositoryTest extends TestCase
         ], $user->toDbForUpdate());
 
     }
+
     public function testHasMany(): void
     {
         $this->insertTestData();
@@ -367,7 +370,7 @@ class RepositoryTest extends TestCase
     {
         $this->insertTestData();
 
-        $userRepository =  $this->manager->getRepository(User::class);
+        $userRepository = $this->manager->getRepository(User::class);
         $this->assertInstanceOf(UserRepository::class, $userRepository);
     }
 
@@ -376,6 +379,6 @@ class RepositoryTest extends TestCase
         $this->insertTestData();
 
         $user = new User();
-        $this->assertTrue( $user->getPosts()->count() == 0);
+        $this->assertTrue($user->getPosts()->count() == 0);
     }
 }

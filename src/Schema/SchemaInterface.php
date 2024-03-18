@@ -23,6 +23,8 @@ interface SchemaInterface
      */
     public function showTables(): string;
 
+    public function showTableColumns(string $tableName): string;
+
     /**
      * Creates a new database.
      *
@@ -75,32 +77,14 @@ interface SchemaInterface
     public function renameTable(string $oldTableName, string $newTableName): string;
 
     /**
-     * Truncates an existing table, removing all data.
-     *
-     * @param string $tableName The name of the table to truncate.
-     * @return string Returns the SQL query for truncating the table.
-     */
-    public function truncateTable(string $tableName): string;
-
-    /**
-     * Modifies the structure of an existing table.
-     *
-     * @param string $tableName The name of the table to alter.
-     * @param array $changes An array of changes to apply to the table.
-     * @return string Returns the SQL query for altering the table.
-     */
-    public function alterTable(string $tableName, array $changes): string;
-
-    /**
      * Adds a new column to an existing table.
      *
      * @param string $tableName The name of the table to modify.
      * @param string $columnName The name of the new column.
      * @param string $columnType The data type of the new column.
-     * @param array $options Additional options for column creation.
      * @return string Returns the SQL query for adding the column.
      */
-    public function addColumn(string $tableName, string $columnName, string $columnType, array $options = []): string;
+    public function addColumn(string $tableName, string $columnName, string $columnType): string;
 
     /**
      * Drops an existing column from a table.
@@ -127,28 +111,35 @@ interface SchemaInterface
      * @param string $tableName The name of the table to modify.
      * @param string $columnName The name of the column to modify.
      * @param string $newColumnType The new data type for the column.
-     * @param array $options Additional options for column modification.
      * @return string Returns the SQL query for modifying the column.
      */
-    public function modifyColumn(string $tableName, string $columnName, string $newColumnType, array $options = []): string;
+    public function modifyColumn(string $tableName, string $columnName, string $newColumnType): string;
 
+    /**
+     * Creates a new unique index on a table.
+     *
+     * @param string $indexName The name of the index to create.
+     * @param string $tableName The name of the table to index.
+     * @param array $columns The columns to include in the index.
+     * @return string Returns the SQL query for creating the index.
+     */
+    public function createUniqueIndex(string $indexName, string $tableName, array $columns): string;
     /**
      * Creates a new index on a table.
      *
      * @param string $indexName The name of the index to create.
      * @param string $tableName The name of the table to index.
      * @param array $columns The columns to include in the index.
-     * @param array $options Additional options for index creation.
      * @return string Returns the SQL query for creating the index.
      */
-    public function createIndex(string $indexName, string $tableName, array $columns, array $options = []): string;
+    public function createIndex(string $indexName, string $tableName, array $columns): string;
 
     /**
      * Drops an existing index from a table.
      *
      * @param string $indexName The name of the index to drop.
-     * @param string $tableName The name of the table to modify.
+     * @param string|null $tableName The name of the table to modify.
      * @return string Returns the SQL query for dropping the index.
      */
-    public function dropIndex(string $indexName, string $tableName): string;
+    public function dropIndex(string $indexName, string $tableName = null): string;
 }

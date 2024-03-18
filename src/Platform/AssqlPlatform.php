@@ -3,6 +3,7 @@
 namespace AlphaSoft\AsLinkOrm\Platform;
 
 use AlphaSoft\AsLinkOrm\AsLinkConnection;
+use AlphaSoft\AsLinkOrm\Schema\AssqlSchema;
 use AlphaSoft\AsLinkOrm\Schema\SchemaInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
@@ -11,7 +12,7 @@ class AssqlPlatform implements PlatformInterface
 {
     private ?Connection $serverConnection = null;
     private array $params;
-    public function __construct(private readonly AsLinkConnection $connection, private readonly SchemaInterface $schema)
+    public function __construct(private readonly AsLinkConnection $connection, private readonly AssqlSchema $schema)
     {
         $this->params = $connection->getParams();
     }
@@ -25,6 +26,11 @@ class AssqlPlatform implements PlatformInterface
     {
         $query = $this->connection->executeQuery($this->schema->showTables());
         return $query->fetchAllAssociative();
+    }
+
+    public function listTableColumns(string $tableName): array
+    {
+        return [];
     }
 
     public function listDatabases(): array
@@ -49,6 +55,26 @@ class AssqlPlatform implements PlatformInterface
     {
         $this->getServerConnection()->executeQuery($this->schema->dropDatabase($this->getDatabaseName()));
         $this->getServerConnection()->close();
+    }
+
+    public function createTable(string $tableName, array $columns, array $options = []): int
+    {
+        return $this->connection->executeStatement($this->schema->createTable($tableName, $columns, $options));
+    }
+
+    public function dropTable(string $tableName): int
+    {
+        return $this->connection->executeStatement($this->schema->dropTable($tableName ));
+    }
+
+    public function dropColumn(string $tableName, string $columnName): int
+    {
+        return $this->connection->executeStatement($this->schema->dropColumn($tableName, $columnName));
+    }
+
+    public function renameColumn(string $tableName, string $oldColumnName, string $newColumnName): int
+    {
+        return $this->connection->executeStatement($this->schema->renameColumn($tableName, $oldColumnName, $newColumnName));
     }
 
     private function getServerConnection(): Connection

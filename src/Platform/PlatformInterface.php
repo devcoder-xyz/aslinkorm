@@ -15,6 +15,7 @@ interface PlatformInterface
      * @return array Returns an array containing the names of all tables in the database.
      */
     public function listTables(): array;
+    public function listTableColumns(string $tableName): array;
 
     /**
      * Retrieves a list of all databases available on the platform.
@@ -50,5 +51,10 @@ interface PlatformInterface
      * @return void
      */
     public function dropDatabase(): void;
+
+    public function createTable(string $tableName, array $columns, array $options = []): int;
+    public function dropTable(string $tableName): int;
+    public function dropColumn(string $tableName, string $columnName): int;
+    public function renameColumn(string $tableName, string $oldColumnName, string $newColumnName): int;
 }
 

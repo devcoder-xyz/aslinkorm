@@ -2,37 +2,37 @@
 
 namespace AlphaSoft\AsLinkOrm\Schema;
 
-class AssqlSchema implements SchemaInterface
+class SqliteSchema implements SchemaInterface
 {
 
     public function showDatabases(): string
     {
-        return 'SHOW DATABASES';
+        throw new \LogicException(sprintf("The method '%s' is not supported by the schema interface.", __METHOD__));
     }
 
     public function showTables(): string
     {
-        return 'SHOW TABLES';
+        return "SELECT name FROM  sqlite_schema WHERE  type ='table' AND name NOT LIKE 'sqlite_%'";
     }
 
     public function showTableColumns(string $tableName): string
     {
-        return 'SHOW COLUMNS';
+        return sprintf("PRAGMA table_info('%s')", $tableName);
     }
 
     public function createDatabase(string $databaseName): string
     {
-        return sprintf('CREATE DATABASE "%s"', $databaseName);
+        throw new \LogicException(sprintf("The method '%s' is not supported by the schema interface.", __METHOD__));
     }
 
     public function createDatabaseIfNotExists(string $databaseName): string
     {
-        return sprintf('CREATE DATABASE IF NOT EXISTS "%s"', $databaseName);
+        throw new \LogicException(sprintf("The method '%s' is not supported by the schema interface.", __METHOD__));
     }
 
     public function dropDatabase(string $databaseName): string
     {
-        return sprintf('DROP DATABASE "%s"', $databaseName);
+        throw new \LogicException(sprintf("The method '%s' is not supported by the schema interface.", __METHOD__));
     }
 
     public function createTable(string $tableName, array $columns, array $options = []): string
@@ -42,52 +42,57 @@ class AssqlSchema implements SchemaInterface
             $lines[]  = "$columnName $columnType";
         }
 
-        $linesString = implode(','.PHP_EOL, $lines);
-       return sprintf('CREATE TABLE %s(%s)', $tableName, $linesString);
+        foreach ($options as $option) {
+            $lines[]  = $option;
+        }
+
+        $linesString = implode(',', $lines);
+
+        return sprintf("CREATE TABLE $tableName (%s)", $linesString);
     }
 
     public function dropTable(string $tableName): string
     {
-       return sprintf('DROP TABLE %s', $tableName);
+        return sprintf('DROP TABLE %s', $tableName);
     }
 
     public function renameTable(string $oldTableName, string $newTableName): string
     {
-       return  sprintf('RENAME TABLE %s TO %s', $oldTableName, $newTableName);
+        return sprintf('ALTER TABLE %s RENAME TO %s', $oldTableName, $newTableName);
     }
 
     public function addColumn(string $tableName, string $columnName, string $columnType): string
     {
-        return sprintf('ALTER TABLE %s ADD (%s %s)', $tableName, $columnName, $columnType);
+       return sprintf('ALTER TABLE %s ADD %s %s', $tableName, $columnName, $columnType);
     }
 
     public function dropColumn(string $tableName, string $columnName): string
     {
-        return sprintf('ALTER TABLE %s DROP (%s)', $tableName, $columnName);
+        return sprintf('ALTER TABLE %s DROP %s', $tableName, $columnName);
     }
 
     public function renameColumn(string $tableName, string $oldColumnName, string $newColumnName): string
     {
-        return sprintf('RENAME COLUMN %s.%s TO %s',$tableName, $oldColumnName, $newColumnName);
+        return sprintf('ALTER TABLE %s RENAME COLUMN %s to %s', $tableName, $oldColumnName, $newColumnName);
     }
 
     public function modifyColumn(string $tableName, string $columnName, string $newColumnType): string
     {
-        return sprintf('ALTER TABLE %s MODIFY (%s %s)', $tableName, $columnName, $newColumnType);
+        throw new \LogicException(sprintf("The method '%s' is not supported by the schema interface.", __METHOD__));
     }
 
     public function createUniqueIndex(string $indexName, string $tableName, array $columns): string
     {
-        return sprintf('CREATE UNIQUE INDEX %s ON %s (%s)', $indexName, $tableName, implode(', ', $columns));
+        return sprintf('CREATE UNIQUE INDEX %s ON %s (%s)',$indexName, $tableName, implode(', ', $columns));
     }
+
     public function createIndex(string $indexName, string $tableName, array $columns): string
     {
-        return sprintf('CREATE INDEX %s ON %s (%s)', $indexName, $tableName, implode(', ', $columns));
+        return sprintf('CREATE INDEX %s ON %s (%s)',$indexName, $tableName, implode(', ', $columns));
     }
 
     public function dropIndex(string $indexName, string $tableName = null): string
     {
         return sprintf('DROP INDEX %s;', $indexName);
     }
-
 }
