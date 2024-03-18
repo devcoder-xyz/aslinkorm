@@ -17,7 +17,7 @@ class AssqlSchema implements SchemaInterface
 
     public function showTableColumns(string $tableName): string
     {
-        return 'SHOW COLUMNS';
+        return sprintf('SHOW COLUMNS FROM %s', $tableName);
     }
 
     public function createDatabase(string $databaseName): string
@@ -90,4 +90,13 @@ class AssqlSchema implements SchemaInterface
         return sprintf('DROP INDEX %s;', $indexName);
     }
 
+    public function getDateTimeFormatString(): string
+    {
+        return 'd/m/Y H:i:s';
+    }
+
+    public function getDateFormatString(): string
+    {
+        return 'd/m/Y';
+    }
 }

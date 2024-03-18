@@ -142,4 +142,7 @@ interface SchemaInterface
      * @return string Returns the SQL query for dropping the index.
      */
     public function dropIndex(string $indexName, string $tableName = null): string;
+
+    public function getDateTimeFormatString(): string;
+    public function getDateFormatString(): string;
 }

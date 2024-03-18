@@ -95,4 +95,14 @@ class SqliteSchema implements SchemaInterface
     {
         return sprintf('DROP INDEX %s;', $indexName);
     }
+
+    public function getDateTimeFormatString(): string
+    {
+        return 'Y-m-d H:i:s';
+    }
+
+    public function getDateFormatString(): string
+    {
+        return 'Y-m-d';
+    }
 }

@@ -3,18 +3,16 @@
 namespace AlphaSoft\AsLinkOrm\Driver;
 
 use AlphaSoft\AsLinkOrm\AsLinkConnection;
-use AlphaSoft\AsLinkOrm\Platform\AssqlPlatform;
 use AlphaSoft\AsLinkOrm\Platform\PlatformInterface;
 use AlphaSoft\AsLinkOrm\Platform\SqlitePlatform;
-use AlphaSoft\AsLinkOrm\Schema\AssqlSchema;
-use AlphaSoft\AsLinkOrm\Schema\SchemaInterface;
 use AlphaSoft\AsLinkOrm\Schema\SqliteSchema;
-use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Driver\AbstractSQLiteDriver;
 use Doctrine\DBAL\Driver\API\SQLite\UserDefinedFunctions;
 use Doctrine\DBAL\Driver\PDO\Connection;
 use Doctrine\DBAL\Driver\PDO\Exception;
 use Doctrine\Deprecations\Deprecation;
+use PDO;
+use PDOException;
 
 final class SqliteDriver extends AbstractSQLiteDriver implements DriverInterface
 {
@@ -23,7 +21,7 @@ final class SqliteDriver extends AbstractSQLiteDriver implements DriverInterface
         array $params
     ): Connection
     {
-        $driverOptions        = $params['driverOptions'] ?? [];
+        $driverOptions = $params['driverOptions'] ?? [];
         $userDefinedFunctions = [];
 
         if (isset($driverOptions['userDefinedFunctions'])) {
@@ -39,13 +37,13 @@ final class SqliteDriver extends AbstractSQLiteDriver implements DriverInterface
         }
 
         try {
-            $pdo = new \PDO(
+            $pdo = new PDO(
                 $this->constructPdoDsn(array_intersect_key($params, ['path' => true, 'memory' => true])),
                 $params['user'] ?? '',
                 $params['password'] ?? '',
                 $driverOptions,
             );
-        } catch (\PDOException $exception) {
+        } catch (PDOException $exception) {
             throw Exception::new($exception);
         }
 
