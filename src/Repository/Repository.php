@@ -2,7 +2,6 @@
 
 namespace AlphaSoft\AsLinkOrm\Repository;
 
-use AlphaSoft\AsLinkOrm\Debugger\SqlDebugger;
 use AlphaSoft\AsLinkOrm\Entity\AsEntity;
 use AlphaSoft\AsLinkOrm\EntityManager;
 use AlphaSoft\AsLinkOrm\Helper\QueryHelper;
@@ -60,6 +59,7 @@ abstract class Repository
 
         return $this->createCollection($data);
     }
+
     public function save(AsEntity $entity): int
     {
         if ($entity->getPrimaryKeyValue()) {
@@ -96,8 +96,12 @@ abstract class Repository
         $query = $this->createQueryBuilder();
         $query->update($this->getTableName());
 
+        $properties = $entity->toDbForUpdate();
+        if ($properties === []) {
+            return 0;
+        }
         $primaryKeyColumn = $entity::getPrimaryKeyColumn();
-        foreach ($entity->toDbForUpdate() as $property => $value) {
+        foreach ($properties as $property => $value) {
             if ($property === $primaryKeyColumn) {
                 continue;
             }
@@ -161,7 +165,21 @@ abstract class Repository
 
     public function querySelect(string $alias = null): QueryBuilder
     {
-        return $this->createQueryBuilder()->from($this->getTableName(), $alias);
+        /**
+         * @var class-string<AsEntity> $entityName
+         */
+        $entityName = $this->getEntityName();
+        $properties = array_map(function (Column $column) use ($alias): string {
+            if ($alias) {
+                return sprintf('`%s`.`%s`', $alias, $column->getName());
+            }
+            return sprintf('`%s`', $column->getName());
+        },
+            $entityName::getColumns()
+        );
+        return $this->createQueryBuilder()
+            ->select(...$properties)
+            ->from($this->getTableName(), $alias);
     }
 
     final protected function mapPropertiesToColumn(array $arguments): array

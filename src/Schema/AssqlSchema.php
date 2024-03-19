@@ -42,7 +42,7 @@ class AssqlSchema implements SchemaInterface
             $lines[]  = "$columnName $columnType";
         }
 
-        $linesString = implode(','.PHP_EOL, $lines);
+        $linesString = implode(',', $lines);
        return sprintf('CREATE TABLE %s(%s)', $tableName, $linesString);
     }
 

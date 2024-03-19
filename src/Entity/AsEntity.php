@@ -20,6 +20,13 @@ abstract class AsEntity extends Model
     private ?EntityRelationCoordinator $__relationCoordinator = null;
     private array $_modifiedAttributes = [];
 
+    final public function hydrate(array $data): void
+    {
+        foreach ($data as $property => $value) {
+            parent::set($property, $value);
+        }
+    }
+
     final public function set(string $property, mixed $value): static
     {
         $property = static::mapColumnToProperty($property);
