@@ -76,7 +76,7 @@ abstract class Repository
 
         $primaryKeyColumn = $entity::getPrimaryKeyColumn();
         foreach ($entity->toDb() as $property => $value) {
-            if ($property === $primaryKeyColumn) {
+            if (str_replace('`', '', $property) === $primaryKeyColumn) {
                 continue;
             }
             $query->setValue($property, $query->createPositionalParameter($value, QueryHelper::typeOfValue($value)));
@@ -102,7 +102,7 @@ abstract class Repository
         }
         $primaryKeyColumn = $entity::getPrimaryKeyColumn();
         foreach ($properties as $property => $value) {
-            if ($property === $primaryKeyColumn) {
+            if (str_replace('`', '', $property) === $primaryKeyColumn) {
                 continue;
             }
             $query->set($property, $query->createPositionalParameter($value, QueryHelper::typeOfValue($value)));
