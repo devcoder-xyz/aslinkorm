@@ -5,6 +5,7 @@ namespace AlphaSoft\AsLinkOrm\Mapper;
 use AlphaSoft\AsLinkOrm\Cache\ColumnCache;
 use AlphaSoft\AsLinkOrm\Cache\PrimaryKeyColumnCache;
 use AlphaSoft\AsLinkOrm\Mapping\Entity\Column;
+use AlphaSoft\AsLinkOrm\Mapping\Entity\JoinColumn;
 use AlphaSoft\AsLinkOrm\Mapping\Entity\PrimaryKeyColumn;
 
 final class ColumnMapper
@@ -42,6 +43,20 @@ final class ColumnMapper
             $cache->set($class, self::columnsMapping($class));
         }
         return $cache->get($class);
+    }
+
+    /**
+     * @return array<Column>
+     */
+    static public function getJoinColumns(string $class): array
+    {
+        $joinColumns = [];
+        foreach (self::getColumns($class) as $column)  {
+            if ($column instanceof JoinColumn) {
+                $joinColumns[] = $column;
+            }
+        }
+        return $joinColumns;
     }
 
     static private function columnsMapping(string $class): array

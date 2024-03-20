@@ -61,11 +61,7 @@ abstract class AsEntity extends Model
     protected function hasOne(string $relatedModel, array $criteria = []): ?object
     {
         $hasColumn = false;
-        foreach (static::getColumns() as $column) {
-            if (!$column instanceof JoinColumn) {
-                continue;
-            }
-
+        foreach (static::getJoinColumns() as $column) {
             if ($column->getTargetEntity() == $relatedModel) {
                 $hasColumn = true;
                 break;
@@ -125,6 +121,14 @@ abstract class AsEntity extends Model
     final static public function getColumns(): array
     {
         return ColumnMapper::getColumns(static::class);
+    }
+
+    /**
+     * @return array<JoinColumn>
+     */
+    final static public function getJoinColumns(): array
+    {
+        return ColumnMapper::getJoinColumns(static::class);
     }
 
     /**

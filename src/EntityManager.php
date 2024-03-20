@@ -21,16 +21,14 @@ class EntityManager
      */
     private array $repositories = [];
 
-    /**
-     * @var array<AsEntity>
-     */
-    private array $trackedEntities = [];
+    private UnitOfWork $unitOfWork;
 
     public function __construct(array $params)
     {
         $params['wrapperClass'] = AsLinkConnection::class;
         $this->connection = DriverManager::getConnection($params);
         $this->connection->setSqlDebugger(new SqlDebugger());
+        $this->unitOfWork = new UnitOfWork();
     }
 
     public function getConnection(): AsLinkConnection
@@ -56,16 +54,33 @@ class EntityManager
 
     public function persist(AsEntity $entity): void
     {
-        $this->trackedEntities[] = $entity;
+        $this->unitOfWork->persist($entity);
+    }
+
+    public function remove(AsEntity $entity): void
+    {
+        $this->unitOfWork->remove($entity);
     }
 
     public function flush(): void
     {
-        foreach ($this->trackedEntities as $entity) {
+        foreach ($this->unitOfWork->getEntityInsertions() as $entity) {
             $repository = $this->getRepository(get_class($entity));
-            $repository->save($entity);
+            $repository->insert($entity);
+            $this->unitOfWork->unsetEntity($entity);
         }
-        $this->trackedEntities = [];
+
+        foreach ($this->unitOfWork->getEntityUpdates() as $entity) {
+            $repository = $this->getRepository(get_class($entity));
+            $repository->update($entity);
+            $this->unitOfWork->unsetEntity($entity);
+        }
+
+        foreach ($this->unitOfWork->getEntityDeletions() as $entity) {
+            $repository = $this->getRepository(get_class($entity));
+            $repository->delete($entity);
+            $this->unitOfWork->unsetEntity($entity);
+        }
     }
 
     public function createDatabasePlatform(): PlatformInterface
@@ -83,4 +98,5 @@ class EntityManager
             $repository->clear();
         }
     }
+
 }
